@@ -1,4 +1,3 @@
-import imp
 import nltk
 from nltk.stem.lancaster import LancasterStemmer
 stemmer = LancasterStemmer()
@@ -21,13 +20,13 @@ for intent in data["intents"]:
     for pattern in intent["patterns"]:
         wrds = nltk.word_tokenize(pattern)
         words.extend(wrds)
-        docs_x.append(pattern)
+        docs_x.append(wrds)
         docs_y.append(intent["tags"])
 
     if intent["tags"] not in labels:
         labels.append(intent["tags"])
 
-words = [stemmer.stem(w.lower()) for w in words]
+words = [stemmer.stem(w.lower()) for w in words if w != "?"]
 words = sorted(list(set(words)))
 
 labels = sorted(labels)
@@ -56,3 +55,18 @@ for x, doc in enumerate(docs_x):
 
 training = np.array(training)
 output = np.array(output)
+
+
+# training model using tensorflow
+tensorflow.reset_default_graph()
+
+net = tflearn.input_data(shape=[None, len(training[0])])
+net = tflearn.fully_connected(net, 8)
+net = tflearn.fully_connected(net, 8)
+net = tflearn.fully_connected(net, len(output[0]), activation="softmax")
+net = tflearn.regression(net)
+
+model = tflearn.DNN(net)
+
+model.fit(training, output, n_epoch=1000, batch_size=8, show_metric=True)
+model.save("model.tflearn")
